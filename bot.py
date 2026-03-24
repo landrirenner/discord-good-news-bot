@@ -1,35 +1,35 @@
 import discord
 from discord.ext import commands
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
+import requests
+import csv
+import io
 import random
 import json
-import datetime
 import os
+import datetime
 
-TOKEN = os.getenv("TOKEN")
-CHANNEL_ID = 1478018060840468601  # replace
+# ========================
+# CONFIG
+# ========================
 
-# Google setup
-scope = [
-    "https://spreadsheets.google.com/feeds",
-    "https://www.googleapis.com/auth/drive"
-]
+TOKEN = os.getenv("TOKEN")  # Railway uses this
+CHANNEL_ID = 1478018060840468601  # REPLACE THIS
 
-creds = ServiceAccountCredentials.from_json_keyfile_name(
-    "credentials.json", scope
-)
+CSV_URL = "https://docs.google.com/spreadsheets/d/1VCi8P72XF31ovIGwfM1uXFGP-B0Cr-8UuUJK3a-R1RA/edit?usp=sharing"  # from Google Sheets
 
-client_sheet = gspread.authorize(creds)
-
-# IMPORTANT: replace with your sheet name
-sheet = client_sheet.open("Good News (Responses)").sheet1
-
+# ========================
+# BOT SETUP
+# ========================
 
 intents = discord.Intents.default()
 intents.message_content = True
+
 bot = commands.Bot(command_prefix="!", intents=intents)
+
+# ========================
+# LOAD / SAVE USED NEWS
+# ========================
 
 def load_used():
     try:
@@ -43,6 +43,25 @@ def save_used(data):
     with open("used.json", "w") as f:
         json.dump(data, f, indent=4)
 
+
+# ========================
+# GET DATA FROM GOOGLE SHEET
+# ========================
+
+def get_news_from_sheet():
+    response = requests.get(CSV_URL)
+    content = response.content.decode("utf-8")
+
+    reader = csv.DictReader(io.StringIO(content))
+    rows = list(reader)
+
+    return rows
+
+
+# ========================
+# POST FUNCTION
+# ========================
+
 async def post_news():
     channel = bot.get_channel(CHANNEL_ID)
 
@@ -50,7 +69,7 @@ async def post_news():
         print("❌ Channel not found.")
         return
 
-    rows = sheet.get_all_records()
+    rows = get_news_from_sheet()
 
     if not rows:
         print("❌ No data found.")
@@ -59,23 +78,23 @@ async def post_news():
     data = load_used()
     used = data["used"]
 
-    # Get unused news
+    # filter unused
     unused = [row["Good News"] for row in rows if row["Good News"] not in used]
 
-    # If everything has been used → reset
+    # reset if all used
     if not unused:
         print("🔄 Resetting used list")
         data["used"] = []
         save_used(data)
         unused = [row["Good News"] for row in rows]
 
-    # Pick one
     news = random.choice(unused)
 
-    # Mark as used
+    # mark as used
     data["used"].append(news)
     save_used(data)
 
+    # pretty embed ✨
     emojis = ["🌱", "🐶", "🌍", "✨", "💛", "📰"]
     emoji = random.choice(emojis)
 
@@ -91,30 +110,48 @@ async def post_news():
     embed.set_footer(text=f"{today} • Good things are happening 💛")
 
     msg = await channel.send(embed=embed)
-
     await msg.add_reaction("💛")
-    await msg.add_reaction("🌱")
+
+
+# ========================
+# EVENTS
+# ========================
 
 @bot.event
 async def on_ready():
-    print(f"Logged in as {bot.user}")
+    print(f"✅ Logged in as {bot.user}")
 
     scheduler = AsyncIOScheduler()
+
+    # ⏰ CHANGE TIME HERE (24hr format)
     scheduler.add_job(post_news, "cron", hour=9, minute=0)
+
     scheduler.start()
+
+
+@bot.event
+async def on_message(message):
+    print(f"SAW MESSAGE: {message.content}")
+    await bot.process_commands(message)
+
+
+# ========================
+# COMMANDS
+# ========================
+
+@bot.command()
+async def test(ctx):
+    await ctx.send("✅ Bot is working!")
+
 
 @bot.command()
 async def postnow(ctx):
     await post_news()
     await ctx.send("✅ Posted today's good news!")
 
-@bot.command()
-async def test(ctx):
-    await ctx.send("✅ Bot is working!")
 
-@bot.event
-async def on_message(message):
-    print(f"SAW MESSAGE: {message.content}")
-    await bot.process_commands(message)
+# ========================
+# RUN BOT
+# ========================
 
 bot.run(TOKEN)
