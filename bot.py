@@ -149,7 +149,6 @@ async def postnow(ctx):
     await post_news()
     await ctx.send("✅ Posted today's good news!")
 
-print("TOKEN LENGTH:", len(os.getenv("TOKEN") or "NONE"))
 # ========================
 # RUN BOT
 # ========================
