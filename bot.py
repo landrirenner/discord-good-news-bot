@@ -146,8 +146,12 @@ async def test(ctx):
 
 @bot.command()
 async def postnow(ctx):
-    await post_news()
-    await ctx.send("✅ Posted today's good news!")
+    try:
+        await post_news()
+        await ctx.send("✅ Posted today's good news!")
+    except Exception as e:
+        print("ERROR:", e)
+        await ctx.send(f"❌ Error: {e}")
 
 # ========================
 # RUN BOT
