@@ -79,14 +79,14 @@ async def post_news():
     used = data["used"]
 
     # filter unused
-    unused = [row["Good News"] for row in rows if row["Good News"] not in used]
+    unused = [row["Good News "] for row in rows if row["Good News "] not in used]
 
     # reset if all used
     if not unused:
         print("🔄 Resetting used list")
         data["used"] = []
         save_used(data)
-        unused = [row["Good News"] for row in rows]
+        unused = [row["Good News "] for row in rows]
 
     news = random.choice(unused)
 
