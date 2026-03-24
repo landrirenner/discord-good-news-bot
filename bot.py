@@ -75,6 +75,40 @@ async def post_news():
         print("❌ No data found.")
         return
 
+    # 🔍 automatically detect the correct column (skip Timestamp)
+    column_names = list(rows[0].keys())
+    print("COLUMNS:", column_names)
+
+    # usually the second column is your form response
+    column_name = column_names[1]
+
+    data = load_used()
+    used = data["used"]
+
+    # filter valid unused entries
+    unused = [
+        row[column_name]
+        for row in rows
+        if row[column_name] and row[column_name] not in used
+    ]
+
+    # reset if all used
+    if not unused:
+        print("🔄 Resetting used list")
+        data["used"] = []
+        save_used(data)
+        unused = [
+            row[column_name]
+            for row in rows
+            if row[column_name]
+        ]
+
+    news = random.choice(unused)
+
+    if not rows:
+        print("❌ No data found.")
+        return
+
     data = load_used()
     used = data["used"]
 
