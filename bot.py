@@ -16,7 +16,7 @@ import datetime
 TOKEN = os.getenv("TOKEN")  # Railway uses this
 CHANNEL_ID = 1478018060840468601  # REPLACE THIS
 
-CSV_URL = "https://docs.google.com/spreadsheets/d/1VCi8P72XF31ovIGwfM1uXFGP-B0Cr-8UuUJK3a-R1RA/edit?usp=sharing"  # from Google Sheets
+CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTjUlb3ctSFl7MByRf4_8XTVqRaLdcrwfgUrG5UibJrwaSVBe3rjy41yFxxb3UxAs-cuHsoMUJn1-eI/pub?output=csv"  # from Google Sheets
 
 # ========================
 # BOT SETUP
