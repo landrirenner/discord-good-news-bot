@@ -6,8 +6,9 @@ from oauth2client.service_account import ServiceAccountCredentials
 import random
 import json
 import datetime
+import os
 
-TOKEN = "MTQ4Mzk4Njk2NjIzNTMxNjM2Ng.GqRgu-.qsV6VDZq__3iW1uCZ_YZzQj21OU_-BnSwv_GnA"
+TOKEN = os.getenv("TOKEN")
 CHANNEL_ID = 1478018060840468601  # replace
 
 # Google setup
