@@ -13,10 +13,10 @@ import datetime
 # CONFIG
 # ========================
 
-TOKEN = os.getenv("TOKEN")  # Railway uses this
-CHANNEL_ID = 1478018060840468601  # REPLACE THIS
+TOKEN = os.getenv("TOKEN")
+CHANNEL_ID = 1478018060840468601
 
-CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTjUlb3ctSFl7MByRf4_8XTVqRaLdcrwfgUrG5UibJrwaSVBe3rjy41yFxxb3UxAs-cuHsoMUJn1-eI/pub?output=csv"  # from Google Sheets
+CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTjUlb3ctSFl7MByRf4_8XTVqRaLdcrwfgUrG5UibJrwaSVBe3rjy41yFxxb3UxAs-cuHsoMUJn1-eI/pub?output=csv"
 
 # ========================
 # BOT SETUP
@@ -75,60 +75,43 @@ async def post_news():
         print("❌ No data found.")
         return
 
-    # 🔍 automatically detect the correct column (skip Timestamp)
+    # detect columns
     column_names = list(rows[0].keys())
     print("COLUMNS:", column_names)
 
-    # usually the second column is your form response
-    column_name = column_names[1]
+    news_col = column_names[1]  # main response
+    link_col = column_names[2] if len(column_names) > 2 else None  # optional link
 
     data = load_used()
     used = data["used"]
 
-    # filter valid unused entries
-    unused = [
-        row[column_name]
-        for row in rows
-        if row[column_name] and row[column_name] not in used
+    # filter unused rows
+    unused_rows = [
+        row for row in rows
+        if row[news_col] and row[news_col] not in used
     ]
 
     # reset if all used
-    if not unused:
+    if not unused_rows:
         print("🔄 Resetting used list")
         data["used"] = []
         save_used(data)
-        unused = [
-            row[column_name]
-            for row in rows
-            if row[column_name]
+        unused_rows = [
+            row for row in rows if row[news_col]
         ]
 
-    news = random.choice(unused)
-
-    if not rows:
-        print("❌ No data found.")
-        return
-
-    data = load_used()
-    used = data["used"]
-
-    # filter unused
-    unused = [row["Good News"] for row in rows if row["Good News"] not in used]
-
-    # reset if all used
-    if not unused:
-        print("🔄 Resetting used list")
-        data["used"] = []
-        save_used(data)
-        unused = [row["Good News"] for row in rows]
-
-    news = random.choice(unused)
+    selected = random.choice(unused_rows)
+    news = selected[news_col]
+    link = selected[link_col] if link_col else None
 
     # mark as used
     data["used"].append(news)
     save_used(data)
 
-    # pretty embed ✨
+    # ========================
+    # EMBED
+    # ========================
+
     emojis = ["🌱", "🐶", "🌍", "✨", "💛", "📰"]
     emoji = random.choice(emojis)
 
@@ -137,6 +120,15 @@ async def post_news():
         description=f"**Here's something positive today:**\n\n{news}",
         color=discord.Color.gold()
     )
+
+    # 🔗 add source link if it exists
+    if link:
+        embed.add_field(
+            name="🔗 Source",
+            value=f"[Read more]({link})",
+            inline=False
+        )
+        embed.url = link  # makes title clickable
 
     embed.timestamp = datetime.datetime.utcnow()
 
@@ -157,7 +149,7 @@ async def on_ready():
 
     scheduler = AsyncIOScheduler()
 
-    # CHANGE TIME HERE (24hr format)
+    # 9AM EST = 13 UTC
     scheduler.add_job(post_news, "cron", hour=13, minute=0)
 
     scheduler.start()
@@ -186,6 +178,7 @@ async def postnow(ctx):
     except Exception as e:
         print("ERROR:", e)
         await ctx.send(f"❌ Error: {e}")
+
 
 # ========================
 # RUN BOT
