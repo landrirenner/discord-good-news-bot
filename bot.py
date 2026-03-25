@@ -158,7 +158,7 @@ async def on_ready():
     scheduler = AsyncIOScheduler()
 
     # ⏰ CHANGE TIME HERE (24hr format)
-    scheduler.add_job(post_news, "cron", hour=9, minute=0)
+    scheduler.add_job(post_news, "cron", hour=13, minute=0)
 
     scheduler.start()
 
